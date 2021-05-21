@@ -3,16 +3,16 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"fmt"
 )
 
 const (
 	//BaseUrl = "https://jsonplaceholder.typicode.com/"
-	BaseUrl = "https://httpbin.org"
-ListeningPort = "8888"
+	BaseUrl       = "https://httpbin.org"
+	ListeningPort = "8888"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func ProxyFunc(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	 
+
 	// Create the reverse proxy
 	proxy := httputil.NewSingleHostReverseProxy(u)
 
@@ -40,6 +40,7 @@ func ProxyFunc(w http.ResponseWriter, req *http.Request) {
 	req.Header.Set("X-Forwarded-Host", req.Header.Get("Host"))
 	req.Host = u.Host
 
+	fmt.Printf("=== reqest sent to target: \n%#v\n", req)
+
 	proxy.ServeHTTP(w, req)
 }
-
