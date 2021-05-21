@@ -6,31 +6,40 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"fmt"
 )
 
-const BaseUrl = "http://localhost:8000"
-const ListeningPort = "8888"
+const (
+	//BaseUrl = "https://jsonplaceholder.typicode.com/"
+	BaseUrl = "https://httpbin.org"
+ListeningPort = "8888"
+)
 
 func main() {
-	// intercept call
-	http.HandleFunc("/sayblah", SayBlah)
+	fmt.Println("Listening on port", ListeningPort)
 
-	// all other traffic pass on
+	// Pass along all requests on this port
 	http.HandleFunc("/", ProxyFunc)
 	http.ListenAndServe(":"+ListeningPort, nil)
 }
 
-func ProxyFunc(w http.ResponseWriter, r *http.Request) {
+func ProxyFunc(w http.ResponseWriter, req *http.Request) {
+	// parse the target url
 	u, err := url.Parse(BaseUrl)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		return
 	}
-
+	 
+	// Create the reverse proxy
 	proxy := httputil.NewSingleHostReverseProxy(u)
-	proxy.ServeHTTP(w, r)
+
+	// Update the headers to allow for SSL redirection
+	req.URL.Host = u.Host
+	req.URL.Scheme = u.Scheme
+	req.Header.Set("X-Forwarded-Host", req.Header.Get("Host"))
+	req.Host = u.Host
+
+	proxy.ServeHTTP(w, req)
 }
 
-func SayBlah(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("BLAH"))
-}
